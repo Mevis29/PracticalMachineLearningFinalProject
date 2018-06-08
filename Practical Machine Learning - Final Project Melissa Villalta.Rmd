@@ -104,6 +104,7 @@ confMatRandForest <- confusionMatrix(predictRandForest, TestSet$classe)
 confMatRandForest
 
 ```
+Method Random Forest: **Out of Sample Error:** 100 - 9985= **15%**
 
 ###Method Decision Tree
 ```{r}
@@ -119,6 +120,7 @@ confMatDecTree
 
 
 ```
+Method Random Forest: **Out of Sample Error:** 100 - 71.93= **28.07%**
 
 ###Method GBM Generalized Boosted Model
 ```{r}
@@ -136,7 +138,7 @@ confMatGBM
 
 
 ```
-
+Method Random Forest: **Out of Sample Error:** 100 - 99.66= **34%**
 
 ##Final Results
 After apply the methods Random Forest, Decision Trees and Generalized Boosted Model (GBM). We got the next modeling accuracy:
@@ -145,3 +147,11 @@ After apply the methods Random Forest, Decision Trees and Generalized Boosted Mo
 - GBM: 0.9866
 
 So, I choose **Random Forest Model** for the prediction because his Accuracy is 0.9985 while GBM is 0.9866.
+
+
+###Getting Prediction
+```{r}
+predictionB2 <- predict(modFitDecTree, testing, type = "class")
+predictionB2
+```
+

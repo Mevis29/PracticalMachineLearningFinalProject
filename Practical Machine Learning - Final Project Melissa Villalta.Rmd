@@ -1,0 +1,147 @@
+---
+title: "Practical Machine Learning - Final Project"
+author: "Melissa Villalta"
+date: "June 7, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Final Project - Prediction Assignment
+
+##Executive Summary
+One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, the goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants.
+
+##Exploratory Analysis and Data Cleaning
+
+###Load packages
+```{r}
+#Load packages
+
+library(lattice)
+library(ggplot2)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(RColorBrewer)
+
+```
+
+###Load data
+Load training and testing data sets.
+
+```{r}
+#Load data
+training <- read.csv("pml-training.csv", na.strings=c("NA","#DIV/0!", "")) 
+testing <- read.csv("pml-testing.csv", na.strings=c("NA","#DIV/0!", ""))
+```
+
+
+##Data Cleaning
+I split the training data set into a train and a test set.
+```{r}
+#Split the training data into Train and Test 
+inTrain  <- createDataPartition(training$classe, p=0.7, list=FALSE)
+TrainSet <- training[inTrain, ]
+TestSet  <- training[-inTrain, ]
+
+dim(TrainSet)
+dim(TestSet)
+```
+
+Removing NearlyZero Variance and NAs
+
+```{r}
+# Remove variables with Nearly Zero Variance
+NZV <- nearZeroVar(TrainSet)
+TrainSet <- TrainSet[, -NZV]
+TestSet  <- TestSet[, -NZV]
+
+dim(TrainSet)
+dim(TestSet)
+```
+
+
+```{r}
+# Remove variables mostly NA
+AllNA    <- sapply(TrainSet, function(x) mean(is.na(x))) > 0.95
+TrainSet <- TrainSet[, AllNA==FALSE]
+TestSet  <- TestSet[, AllNA==FALSE]
+
+dim(TrainSet)
+dim(TestSet)
+```
+
+Selecting the columns I will use for the modeling
+
+```{r}
+# remove identification only variables (columns 1 to 5)
+TrainSet <- TrainSet[, -(1:5)]
+TestSet  <- TestSet[, -(1:5)]
+
+dim(TrainSet)
+dim(TestSet)
+```
+
+##Modeling
+I select the methods **Random Forest, Decision Trees and Generalized Boosted Model (GBM)** to verify the best accuracy for prediction.
+
+###Method Random Forest
+```{r}
+# Model fit
+set.seed(12345)
+controlRF <- trainControl(method="cv", number=3, verboseIter=FALSE)
+modFitRandForest <- train(classe ~ ., data=TrainSet, method="rf",
+                          trControl=controlRF)
+modFitRandForest$finalModel
+
+# Prediction on Test dataset
+predictRandForest <- predict(modFitRandForest, newdata=TestSet)
+confMatRandForest <- confusionMatrix(predictRandForest, TestSet$classe)
+confMatRandForest
+
+```
+
+###Method Decision Tree
+```{r}
+# Model fit
+set.seed(12345)
+modFitDecTree <- rpart(classe ~ ., data=TrainSet, method="class")
+rpart.plot(modFitDecTree)
+
+# Prediction on Test dataset
+predictDecTree <- predict(modFitDecTree, newdata=TestSet, type="class")
+confMatDecTree <- confusionMatrix(predictDecTree, TestSet$classe)
+confMatDecTree
+
+
+```
+
+###Method GBM Generalized Boosted Model
+```{r}
+# Model fit
+set.seed(12345)
+controlGBM <- trainControl(method = "repeatedcv", number = 5, repeats = 1)
+modFitGBM  <- train(classe ~ ., data=TrainSet, method = "gbm",
+                    trControl = controlGBM, verbose = FALSE)
+modFitGBM$finalModel
+
+# Prediction on Test dataset
+predictGBM <- predict(modFitGBM, newdata=TestSet)
+confMatGBM <- confusionMatrix(predictGBM, TestSet$classe)
+confMatGBM
+
+
+```
+
+
+##Final Results
+After apply the methods Random Forest, Decision Trees and Generalized Boosted Model (GBM). We got the next modeling accuracy:
+- Random Forest: 0.9985
+- Decision Trees: 0.7193
+- GBM: 0.9866
+
+So, I choose **Random Forest Model** for the prediction because his Accuracy is 0.9985 while GBM is 0.9866.
